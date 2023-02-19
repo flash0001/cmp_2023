@@ -1,2 +1,1 @@
-# cmp_2023
-program components
+# Программные компоненты
