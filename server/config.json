@@ -1,0 +1,6 @@
+{
+  "server": {
+    "port": 5555,
+    "debug": true
+  }
+}
