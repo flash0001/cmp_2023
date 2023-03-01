@@ -1,18 +1,15 @@
 #! /usr/bin/env python3
+
+import os
+import json
 from flask import Flask, request, make_response, jsonify
-from core import Device
-from json import JSONDecodeError
-from functools import reduce
+from core import Device, RACE_TYPE
 
 device = Device()
 
 app = Flask("server")
-print(__file__)
 
-RACE_TYPE = [
-    "qualifying", "top_32", "top_16",
-    "top_8", "semifinal", "battle for 3rd place", "final",
-]
+DEFAULT_CONFIG = {"port": 5555, "debug": True}
 
 
 class ClientError(Exception):
@@ -20,7 +17,19 @@ class ClientError(Exception):
 
 
 def read_config():
-    return {"port": 5555, "debug": True}
+    # TODO make the directory in home
+    home_dir = os.path.dirname(__file__)
+    cfg_file = os.path.join(home_dir, "config.json")
+    cfg = {**DEFAULT_CONFIG}
+    try:
+        with open(cfg_file) as fl:
+            data = json.load(fl)
+        cfg["port"] = data.get("port", DEFAULT_CONFIG["port"])
+        cfg["debug"] = data.get("debug", DEFAULT_CONFIG["debug"])
+    except (FileNotFoundError, json.JSONDecodeError):
+        with open(cfg_file, "w") as fp:
+            json.dump(DEFAULT_CONFIG, fp)
+    return cfg
 
 
 def validate_driver_id(idx):
@@ -31,7 +40,7 @@ def validate_driver_id(idx):
 
 
 def validate_race_type(race_type):
-    if isinstance(race_type, str):
+    if not isinstance(race_type, str):
         raise ClientError(
             f"race_type must be str, but type is {type(race_type)}")
     if race_type not in RACE_TYPE:
@@ -39,18 +48,22 @@ def validate_race_type(race_type):
 
 
 def validate_user_data(data):
-    if not isinstance(data, dict):
-        raise ClientError(f"data must be tuple, but received {type(data)}")
-    validate_driver_id(data.get("driver_id"))
-    validate_race_type(data.get("race_type"))
+    if not isinstance(data, list):
+        raise ClientError(f"data must be list, but received {type(data)}")
+    for item in data:
+        validate_driver_id(item.get("driver_id"))
+        validate_race_type(item.get("race_type"))
 
 
-@app.route("/", methods=["POST"])
+@app.route("/race", methods=["POST"])
 def receive_race_params():
     try:
         data = request.json
         validate_user_data(data)
-    except JSONDecodeError:
+        device.set_race_state()
+        device.next()
+        res = jsonify({"message": "race is finished"})
+    except json.JSONDecodeError:
         raise ClientError("content type error")
     except ClientError as err:
         res = app.response_class(
@@ -61,9 +74,19 @@ def receive_race_params():
     return res
 
 
-@app.route("/state", methods=["GET"])
+@app.route("/device/state", methods=["GET"])
 def handler_state():
-    return jsonify({"state": device.state.nam})
+    return jsonify({"state": device.state.name})
+
+
+@app.route("/device/unload", methods=["POST"])
+def handler_unload():
+    if device.is_finish_state():
+        data = device.buffer
+        device.reset()
+    else:
+        data = []
+    return jsonify({"buffer": data})
 
 
 if __name__ == "__main__":
