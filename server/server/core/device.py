@@ -101,6 +101,24 @@ class Device:
         self.__driver_id = None
         self.__race_type = None
 
+    @staticmethod
+    def reduce(lst: list[int] | tuple[int], new_length: int = 60, n: int = 10) -> list[float]:
+        """ dev = Device()
+        ...
+        Device.reduce(dev.buffer)
+        Args:
+            lst (list[int] | tuple[int]): _description_
+            new_length (int, optional): _description_. Defaults to 60.
+            n (int, optional): _description_. Defaults to 10.
+
+        Returns:
+            list[float]: _description_
+        """
+        out = []
+        for i in range(0, new_length):
+            out.append(sum(lst[i:i+n])/n)
+        return out
+
     @property
     def buffer(self):
         return tuple(self.__buffer)
@@ -109,7 +127,9 @@ class Device:
         self.__buffer.append(value)
 
     def reset(self):
-        self.__buffer = []
+        # TODO check this method
+        if self.__current_state.is_finish_state():
+            self.__buffer = []
 
     def set_free_state(self):
         self.__current_state = self.__free_state
