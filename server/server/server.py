@@ -3,7 +3,8 @@
 import os
 import json
 from flask import Flask, request, make_response, jsonify
-from core import Device, RACE_TYPE
+from core import Device
+from models import Race, ValidationError
 
 device = Device()
 
@@ -32,40 +33,22 @@ def read_config():
     return cfg
 
 
-def validate_driver_id(idx):
-    if not isinstance(idx, int):
-        raise ClientError(f"driver_id must be int, but type is {type(idx)}")
-    elif idx < 1 or idx > 99:
-        raise ClientError("value of driver_id out of range")
-
-
-def validate_race_type(race_type):
-    if not isinstance(race_type, str):
-        raise ClientError(
-            f"race_type must be str, but type is {type(race_type)}")
-    if race_type not in RACE_TYPE:
-        raise ClientError("unknown type of race")
-
-
-def validate_user_data(data):
-    if not isinstance(data, list):
-        raise ClientError(f"data must be list, but received {type(data)}")
-    for item in data:
-        validate_driver_id(item.get("driver_id"))
-        validate_race_type(item.get("race_type"))
-
-
 @app.route("/race", methods=["POST"])
 def receive_race_params():
     try:
         data = request.json
-        validate_user_data(data)
-        device.set_race_state()
-        device.next()
-        res = jsonify({"message": "race is finished"})
+        print(data)
+        data = Race(race_type=data.get("race_type"),
+                    drivers=data.get("drivers"))
+        results = []
+        for driver_id in data.drivers:
+            device.set(driver_id=driver_id, race_type=data.race_type.value)
+            device.run()
+            results.append(device.get())
+        res = jsonify(results)
     except json.JSONDecodeError:
         raise ClientError("content type error")
-    except ClientError as err:
+    except ValidationError as err:
         res = app.response_class(
             response=json.dumps({"error": str(err)}),
             status=400,
@@ -79,14 +62,11 @@ def handler_state():
     return jsonify({"state": device.state.name})
 
 
-@app.route("/device/unload", methods=["POST"])
+@app.route("/device/unload", methods=["GET"])
 def handler_unload():
-    if device.is_finish_state():
-        data = device.buffer
-        device.reset()
-    else:
-        data = []
-    return jsonify({"buffer": data})
+    data = device.get()
+    device.reset()
+    return jsonify(data)
 
 
 if __name__ == "__main__":

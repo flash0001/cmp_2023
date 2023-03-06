@@ -1,157 +1,43 @@
-#! /usr/bin/env python3
-from .timer import Timer
-from time import sleep
-from random import randint
-
-
-class State:
-    """Base state"""
-
-    def __init__(self, fsm):
-        self._fsm = fsm
-
-    def __eq__(self, another_state):
-        return self.STATE_NAME == another_state.STATE_NAME
-
-    def next(self):
-        return self._fsm.state
-
-    @property
-    def name(self):
-        return "undefined"
-
-    def is_free_state(self):
-        return False
-
-    def is_race_state(self):
-        return False
-
-    def is_finish_state(self):
-        return False
-
-
-class FreeState(State):
-
-    STATE_NAME = "free"
-
-    def next(self):
-        self._fsm.set_race_state()
-        return super().next()
-
-    @property
-    def name(self):
-        return FreeState.STATE_NAME
-
-    def is_free_state(self):
-        return True
-
-
-class RaceState(State):
-
-    STATE_NAME = "race"
-
-    def __init__(self, fsm):
-        super().__init__(fsm)
-        self.__timer = Timer()
-
-    def next(self):
-        self.__timer.start()
-        while self.__timer.value.seconds <= 60:
-            value = randint(-360, 360)
-            self._fsm.push(value)
-            sleep(0.1)
-        self.__timer.stop()
-        self.__timer.reset()
-        self._fsm.set_finish_state()
-        return super().next()
-
-    @property
-    def name(self):
-        return RaceState.STATE_NAME
-
-    def is_race_state(self):
-        return True
-
-
-class FinishState(State):
-
-    STATE_NAME = "finish"
-
-    def next(self):
-        self._fsm.reset()
-        self._fsm.set_free_state()
-        return super().next()
-
-    @property
-    def name(self):
-        return FinishState.STATE_NAME
-
-    def is_finish_state(self):
-        return True
+from .fsm import FSM
 
 
 class Device:
 
-    def __init__(self):
-        self.__free_state = FreeState(self)
-        self.__race_state = RaceState(self)
-        self.__finish_state = FinishState(self)
-        self.__current_state = self.__free_state
-        self.__buffer = []
+    def __init__(self, fsm: FSM = FSM()):
+        self.__fsm = fsm
         self.__driver_id = None
         self.__race_type = None
 
-    @staticmethod
-    def reduce(lst: list[int] | tuple[int], new_length: int = 60, n: int = 10) -> list[float]:
-        """ dev = Device()
-        ...
-        Device.reduce(dev.buffer)
-        Args:
-            lst (list[int] | tuple[int]): _description_
-            new_length (int, optional): _description_. Defaults to 60.
-            n (int, optional): _description_. Defaults to 10.
+    def set(self, *, driver_id: int, race_type: str):
+        if self.__fsm.state.is_free_state():
+            self.__driver_id = driver_id
+            self.__race_type = race_type
 
-        Returns:
-            list[float]: _description_
-        """
-        out = []
-        for i in range(0, new_length):
-            out.append(sum(lst[i:i+n])/n)
-        return out
-
-    @property
-    def buffer(self):
-        return tuple(self.__buffer)
-
-    def push(self, value):
-        self.__buffer.append(value)
+    def get(self):
+        timer = self.__fsm.timer
+        data = {
+            "driver_id": self.__driver_id,
+            "race_type": self.__race_type,
+            "start_at": timer.start_at,
+            "stop_at": timer.stop_at,
+            "state": self.__fsm.state.name,
+            "telemetry": [],
+        }
+        if self.__fsm.state.is_finish_state():
+            data["telemetry"] = self.__fsm.buffer
+        return data
 
     def reset(self):
-        # TODO check this method
-        if self.__current_state.is_finish_state():
-            self.__buffer = []
+        if self.__fsm.state.is_finish_state:
+            self.__fsm.reset()
+            self.__driver_id = None
+            self.__race_type = None
 
-    def set_free_state(self):
-        self.__current_state = self.__free_state
-
-    def set_race_state(self):
-        self.__current_state = self.__race_state
-
-    def set_finish_state(self):
-        self.__current_state = self.__finish_state
-
-    def is_free_state(self):
-        return self.__current_state.is_free_state()
-
-    def is_race_state(self):
-        return self.__current_state.is_race_state()
-
-    def is_finish_state(self):
-        return self.__current_state.is_finish_state()
+    def run(self):
+        if self.__fsm.state.is_free_state():
+            self.__fsm.set_race_state()
+            self.__fsm.next()
 
     @property
     def state(self):
-        return self.__current_state
-
-    def next(self):
-        return self.__current_state.next()
+        return self.__fsm.state

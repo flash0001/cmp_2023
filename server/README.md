@@ -33,7 +33,10 @@ mime: application/json
 ```
 
 ```json
-[{ "driver_id": 1, "race_type": "final" }]
+[
+  { "driver_id": 1, "race_type": "final" },
+  { "driver_id": 3, "race_type": "final" }
+]
 ```
 
 ```json
