@@ -6,9 +6,8 @@ CREATE TABLE IF NOT EXISTS sponsor (
 
 CREATE TABLE IF NOT EXISTS competition (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  sponsor_id       INTEGER NOT NULL,
-  name             TEXT    NOT NULL,
-  FOREIGN KEY(sponsor_id) REFERENCES sponsor(id)
+  sponsor          TEXT NOT NULL,
+  name             TEXT NOT NULL,
 );
 
 CREATE TABLE IF NOT EXISTS driver (
