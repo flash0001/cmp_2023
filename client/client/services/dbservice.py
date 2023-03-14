@@ -1,13 +1,12 @@
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Integer, String, ForeignKey
 import os
-from pathlib import Path
-import sqlalchemy as db
-from sqlalchemy import text, ForeignKey
 import sqlite3
 from datetime import datetime
+
+import sqlalchemy as db
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import mapped_column, relationship
 
 __dir__ = os.path.abspath(os.path.dirname(__file__))
 
@@ -67,15 +66,22 @@ class Race(Base):
         nullable=False,
         default=lambda: str(datetime.now().astimezone())
     )
-    start_at: Mapped[str] = mapped_column(nullable=True)
+    finish_at: Mapped[str] = mapped_column(nullable=True)
     data: Mapped[str] = mapped_column(nullable=True)
 
     competition: Mapped[Competition.__name__] = relationship(
         back_populates="race")
-    race_type: Mapped[RaceType.__name__] = relationship(back_populates="race")
+    race_type_obj: Mapped[RaceType.__name__] = relationship(back_populates="race")
 
 
 class DriverHasRace(Base):
     __tablename__ = "driver_has_race"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    driver_id: Mapped[int] = mapped_column((ForeignKey("driver.id")), nullable=False)
+    race_id: Mapped[int] = mapped_column((ForeignKey("race.id")), nullable=False)
+
+    driver: Mapped[Driver.__name__] = relationship(
+        back_populates="driver_has_race")
+    race: Mapped[Race.__name__] = relationship(
+        back_populates="driver_has_race")
