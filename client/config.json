@@ -1,0 +1,10 @@
+{
+  "dark": true,
+  "server": {
+    "port": 8888,
+    "debug": true
+  },
+  "api_server": {
+    "port": 5555
+  }
+}

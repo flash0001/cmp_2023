@@ -1,8 +1,8 @@
 
-CREATE TABLE IF NOT EXISTS sponsor (
-  id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  name             TEXT NOT NULL
-);
+-- CREATE TABLE IF NOT EXISTS sponsor (
+--  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+--  name             TEXT NOT NULL
+--);
 
 CREATE TABLE IF NOT EXISTS competition (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
