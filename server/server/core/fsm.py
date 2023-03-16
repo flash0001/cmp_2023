@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
-from .timer import Timer
+try:
+    from .timer import Timer
+except Exception:
+    from timer import Timer
 from time import sleep
 from random import randint
 
@@ -62,10 +65,15 @@ class RaceState(State):
     def next(self):
         self.timer.reset()
         self.timer.start()
-        while self.timer.value.seconds <= 60:
-            value = randint(-360, 360)
-            self._fsm.push(value)
-            sleep(0.1)
+        try:
+            while self.timer.value.seconds <= 60:
+                value = randint(-360, 360)
+                self._fsm.push(value)
+                sleep(0.1)
+        except KeyboardInterrupt:
+            pass
+        except InterruptedError:
+            pass
         self.timer.stop()
         self._fsm.set_finish_state()
         return super().next()
@@ -162,3 +170,15 @@ class FSM:
 
     def next(self):
         return self.__current_state.next()
+
+    def run_race(self):
+        data = {}
+        if self.is_free_state():
+            self.set_race_state()
+            self.__current_state.next()
+            data = {
+                "started_at": self.timer.started_at,
+                "finished_at": self.timer.stopped_at,
+                "telemetry": self.buffer,
+            }
+        return data

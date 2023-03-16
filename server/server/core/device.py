@@ -1,4 +1,10 @@
-from .fsm import FSM
+#! /usr/bin/env python3
+if __name__ == "__main__":
+    import json
+    import sys
+    from fsm import FSM
+else:
+    from .fsm import FSM
 
 
 class Device:
@@ -18,8 +24,9 @@ class Device:
         data = {
             "driver_id": self.__driver_id,
             "race_type": self.__race_type,
-            "start_at": timer.start_at,
-            "stop_at": timer.stop_at,
+            "started_at": str(timer.started_at),
+            "finished_at": str(timer.stopped_at),
+            "duration": (timer.stopped_at - timer.started_at).seconds,
             "state": self.__fsm.state.name,
             "telemetry": [],
         }
@@ -35,9 +42,22 @@ class Device:
 
     def run(self):
         if self.__fsm.state.is_free_state():
-            self.__fsm.set_race_state()
-            self.__fsm.next()
+            self.__fsm.run_race()
+
+    def stop(self):
+        self.__fsm.set_finish_state()
 
     @property
     def state(self):
         return self.__fsm.state
+
+
+if __name__ == "__main__":
+    dev = Device()
+    race_type, driver_id = sys.argv[1:3]
+    dev.set(driver_id=driver_id, race_type=race_type)
+    dev.run()
+    with open("/tmp/OUT", "w") as fp:
+        fp.write(json.dumps(dev.get()))
+    sys.stdout.write(json.dumps(dev.get()))
+    sys.exit(0)

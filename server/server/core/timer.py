@@ -5,36 +5,36 @@ from datetime import datetime
 
 class Timer:
     def __init__(self):
-        self._start_at = None
-        self._stop_at = None
+        self._started_at = None
+        self._stopped_at = None
 
     def start(self):
-        if self._start_at is None:
-            self._start_at = datetime.now().astimezone()
-        return self._start_at
+        if self._started_at is None:
+            self._started_at = datetime.now().astimezone()
+        return self._started_at
 
     @property
-    def start_at(self):
-        return self._start_at
+    def started_at(self):
+        return self._started_at
 
     @property
-    def stop_at(self):
-        return self._stop_at
+    def stopped_at(self):
+        return self._stopped_at
 
     @property
     def value(self):
         start = datetime.now().astimezone()
         stop = start
-        if self._start_at is not None:
-            start = self._start_at
-        if self._stop_at is not None:
-            stop = self._stop_at
+        if self._started_at is not None:
+            start = self._started_at
+        if self._stopped_at is not None:
+            stop = self._stopped_at
         return stop - start
 
     def stop(self):
-        if self._start_at is not None and self._stop_at is None:
-            self._stop_at = datetime.now().astimezone()
-        return [self._start_at, self._stop_at]
+        if self._started_at is not None and self._stopped_at is None:
+            self._stopped_at = datetime.now().astimezone()
+        return [self._started_at, self._stopped_at]
 
     def reset(self):
         self.__init__()
