@@ -1,7 +1,6 @@
 from subprocess import Popen, PIPE
 import signal
-import os
-import time
+import sys
 
 
 class Pout(dict):
@@ -31,8 +30,8 @@ class ProcPool:
         self.__proc_list = []
 
     def add(self, cmd: str, *args):
-        self.__proc_list.append(
-            Popen([cmd, *map(lambda x: str(x), args)], stdout=PIPE, stderr=PIPE))
+        proc = Popen([sys.executable, cmd, *map(lambda x: str(x), args)], stdout=PIPE, stderr=PIPE)
+        self.__proc_list.append(proc)
 
     def stop(self) -> list[Pout]:
         out = []

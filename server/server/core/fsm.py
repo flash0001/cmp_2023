@@ -3,9 +3,20 @@ try:
     from .timer import Timer
 except Exception:
     from timer import Timer
+import signal
 from time import sleep
 from random import randint
 
+
+class GracefulKiller:
+    kill_now = False
+
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def exit_gracefully(self, *args):
+        self.kill_now = True
 
 class State:
     _TIMER = Timer()
@@ -14,6 +25,7 @@ class State:
     def __init__(self, fsm):
         self.__timer = State._TIMER
         self._fsm = fsm
+        self._gk = GracefulKiller()
 
     def __eq__(self, another_state):
         return self.STATE_NAME == another_state.STATE_NAME
@@ -66,7 +78,7 @@ class RaceState(State):
         self.timer.reset()
         self.timer.start()
         try:
-            while self.timer.value.seconds <= 60:
+            while self.timer.value.seconds <= 60 or not self._gk.kill_now:
                 value = randint(-360, 360)
                 self._fsm.push(value)
                 sleep(0.1)

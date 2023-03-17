@@ -4,8 +4,10 @@ if __name__ == "__main__":
     import sys
     __dir__ = os.path.abspath(os.path.dirname(__file__))
     sys.path.append(f"{__dir__}/..")
+    sys.path.append(f"{__dir__}/../core")
+    print("new path: ", sys.path[-1])
 
-from core import Result
+from result import Result
 from requests import Response
 import requests
 import json
