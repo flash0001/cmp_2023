@@ -37,8 +37,11 @@ class ProcPool:
         out = []
         while len(self.__proc_list):
             proc = self.__proc_list.pop()
-            proc.send_signal(signal.SIGINT)
-            out.append(Pout(*proc.communicate()))
+            # proc.send_signal(signal.SIGINT)
+            proc.terminate()
+            print(proc.poll())
+            o, e = proc.communicate()
+            out.append(Pout(o, e))
         return out
 
     def is_empty(self) -> bool:
