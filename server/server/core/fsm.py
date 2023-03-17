@@ -78,7 +78,7 @@ class RaceState(State):
         self.timer.reset()
         self.timer.start()
         try:
-            while self.timer.value.seconds <= 60 or not self._gk.kill_now:
+            while not self._gk.kill_now and self.timer.value.seconds <= 60:
                 value = randint(-360, 360)
                 self._fsm.push(value)
                 sleep(0.1)
