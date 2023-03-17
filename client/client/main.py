@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
@@ -78,4 +79,4 @@ def render_page_content(pathname):
 
 
 if __name__ == "__main__":
-    app.run_server(port=config.server.port, debug=config.server.debug)
+    app.run_server(port=config.server.port, threaded=True, debug=config.server.debug)
