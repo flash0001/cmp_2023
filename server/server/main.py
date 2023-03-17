@@ -44,8 +44,9 @@ def read_config():
 
 def clear_data_dir():
     for file in os.listdir(data_dir):
-        if os.path.isfile(file):
-            os.remove(file)
+        file_path = f"{data_dir}/{file}"
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
 
 @app.route("/race", methods=["POST"])
