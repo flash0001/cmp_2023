@@ -15,6 +15,9 @@ DEFAULT_CONFIG = {"port": 5555, "debug": True}
 pool = ProcPool()
 
 __dir__ = os.path.abspath(os.path.dirname(__file__))
+data_dir = f"{__dir__}/data"
+if not os.path.isdir(data_dir):
+    os.mkdir(data_dir)
 
 SUB_PROC_PATH = f"{__dir__}/core/device.py"
 
@@ -50,7 +53,12 @@ def receive_race_params():
                 drivers=data.get("drivers")
             )
             for driver_id in race.drivers:
-                pool.add(SUB_PROC_PATH, race.race_type, driver_id)
+                pool.add(
+                    SUB_PROC_PATH,
+                    race.race_type,
+                    driver_id,
+                    data_dir,
+                )
             res = make_response(Result(ok="the race is running"))
         except json.JSONDecodeError:
             raise ClientError("content type error")

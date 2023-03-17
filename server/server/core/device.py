@@ -9,7 +9,7 @@ else:
 
 class Device:
 
-    def __init__(self, fsm: FSM = FSM()):
+    def __init__(self, fsm: FSM):
         self.__fsm = fsm
         self.__driver_id = None
         self.__race_type = None
@@ -53,8 +53,8 @@ class Device:
 
 
 if __name__ == "__main__":
-    dev = Device()
-    race_type, driver_id = sys.argv[1:3]
+    race_type, driver_id, file_path = sys.argv[1:4]
+    dev = Device(FSM(open(file_path, "w")))
     dev.set(driver_id=driver_id, race_type=race_type)
     dev.run()
     sys.stdout.write(json.dumps(dev.get()))

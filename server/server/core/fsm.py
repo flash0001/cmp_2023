@@ -8,16 +8,6 @@ from time import sleep
 from random import randint
 
 
-class GracefulKiller:
-    kill_now = False
-
-    def __init__(self):
-        signal.signal(signal.SIGINT, self.exit_gracefully)
-        signal.signal(signal.SIGTERM, self.exit_gracefully)
-
-    def exit_gracefully(self, *args):
-        self.kill_now = True
-
 class State:
     _TIMER = Timer()
     """Base state"""
@@ -25,7 +15,6 @@ class State:
     def __init__(self, fsm):
         self.__timer = State._TIMER
         self._fsm = fsm
-        self._gk = GracefulKiller()
 
     def __eq__(self, another_state):
         return self.STATE_NAME == another_state.STATE_NAME
@@ -78,7 +67,7 @@ class RaceState(State):
         self.timer.reset()
         self.timer.start()
         try:
-            while not self._gk.kill_now and self.timer.value.seconds <= 60:
+            while self.timer.value.seconds <= 60:
                 value = randint(-360, 360)
                 self._fsm.push(value)
                 sleep(0.1)
@@ -117,12 +106,13 @@ class FinishState(State):
 
 class FSM:
 
-    def __init__(self):
+    def __init__(self, file=None):
         self.__free_state = FreeState(self)
         self.__race_state = RaceState(self)
         self.__finish_state = FinishState(self)
         self.__current_state = self.__free_state
         self.__buffer = []
+        self.__file = file
 
     @staticmethod
     def reduce(lst: list[int] | tuple[int], new_length: int = 60, n: int = 10) -> list[float]:
@@ -147,6 +137,9 @@ class FSM:
         return tuple(self.__buffer)
 
     def push(self, value):
+        if self.__file is not None:
+            self.__file.write(f"{value},")
+            self.__file.flush()
         self.__buffer.append(value)
 
     def reset(self):
