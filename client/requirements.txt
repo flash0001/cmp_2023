@@ -3,5 +3,6 @@ dash-bootstrap-components
 sqlalchemy
 requests
 pydantic
-pandas
 dash_echarts
+plotly
+pandas
