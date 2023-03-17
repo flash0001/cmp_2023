@@ -146,7 +146,7 @@ def on_click_star_race(*values):
         drivers = data[1:3] if data[-1] else data[1:2]
         print("[INFO] trying to start a race with these params: ", {"race_type": data[0], "drivers": drivers})
         race_type = "_".join(data[0].split(" "))
-        res = ctx.http_client.start_race(race_type=data[0], drivers=drivers)
+        res = ctx.http_client.start_race(race_type=race_type, drivers=drivers)
         data = res.ok
         print(f"[{data and 'OK' or 'ERROR'}] response has been received from server: ", res)
         if data:
