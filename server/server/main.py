@@ -84,7 +84,7 @@ def handler_state():
 @ app.route("/race/finish", methods=["GET"])
 def handler_unload():
     if not pool.is_empty():
-        data = [*map(lambda res: res.stdout, pool.stop())]
+        data = [*map(lambda res: json.loads(res.stdout), pool.stop())]
         res = jsonify(Result(ok=data))
     else:
         res = app.response_class(
@@ -96,4 +96,4 @@ def handler_unload():
 
 
 if __name__ == "__main__":
-    app.run(**read_config())
+    app.run(**{**read_config(), "host": "127.0.0.1"})

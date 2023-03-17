@@ -4,7 +4,7 @@ from requests import Response
 
 class Result(dict):
     def __init__(self, *, ok: str | None = None, error: str | Exception | None = None):
-        self["ok"] = ok if ok is None else str(ok)
+        self["ok"] = ok
         self["error"] = error if error is None else str(error)
 
     @property

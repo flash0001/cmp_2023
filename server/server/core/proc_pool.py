@@ -36,7 +36,7 @@ class ProcPool:
 
     def stop(self) -> list[Pout]:
         out = []
-        while self.__proc_list:
+        while len(self.__proc_list):
             proc = self.__proc_list.pop()
             proc.send_signal(signal.SIGINT)
             out.append(Pout(*proc.communicate()))
