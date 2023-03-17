@@ -67,7 +67,7 @@ if __name__ == "__main__":
     res = http.start_race(race_type="final", drivers=[2, 3])
     print(res)
     print(http.get_race_status())
-    time.sleep(2)
+    time.sleep(20)
     res = http.stop_race()
     print(res)
     print(http.get_race_status())

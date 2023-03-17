@@ -57,7 +57,5 @@ if __name__ == "__main__":
     race_type, driver_id = sys.argv[1:3]
     dev.set(driver_id=driver_id, race_type=race_type)
     dev.run()
-    with open("/tmp/OUT", "w") as fp:
-        fp.write(json.dumps(dev.get()))
     sys.stdout.write(json.dumps(dev.get()))
     sys.exit(0)
