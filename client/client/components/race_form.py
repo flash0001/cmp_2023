@@ -151,7 +151,7 @@ def on_click_star_race(*values):
         print(f"[{data and 'OK' or 'ERROR'}] response has been received from server: ", res)
         if data:
             ctx.is_finished_race = True
-            self.notifications.append(res.ok)
+            #.notifications.append(res.ok)
     return ""
 
 
