@@ -78,5 +78,11 @@ def render_page_content(pathname):
     )
 
 
+@app.route("/arc")
+def get_archive():
+    data = "test"
+    return data
+
+
 if __name__ == "__main__":
     app.run_server(port=config.server.port, threaded=True, debug=config.server.debug)
