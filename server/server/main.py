@@ -42,9 +42,16 @@ def read_config():
     return cfg
 
 
+def clear_data_dir():
+    for file in os.listdir(data_dir):
+        if os.path.isfile(file):
+            os.remove(file)
+
+
 @app.route("/race", methods=["POST"])
 def receive_race_params():
     if pool.is_empty():
+        clear_data_dir()
         try:
             data = request.json
             print(data)
