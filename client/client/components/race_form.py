@@ -1,38 +1,42 @@
+import sys
 import requests
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, dcc, html
+from dash import Input, Output, State, html
 from services import application as app
-from services import dbservice as db
+from services import database as db, HTTPClient
 
+class RaceContext:
+    def __init__(self):
+        self.http_client = HTTPClient()
+        res = self.http_client.get_race_status()
 
-# it loads data from the database
-with db.Session() as session:
-    race_type_collection = session.scalars(db.select(db.RaceType))
-    race_collection = session.scalars(db.select(db.Race))
-    driver_collection = session.scalars(db.select(db.Driver))
+        if res.error:
+            sys.stderr.write(res.ok)
+            sys.exit(1)
+        self.is_finished_race = res.ok == "finished"
+        self.race_types = db.get_race_type_names()
+        self.drivers = db.get_drivers_id()
+        self.is_disabled = not db.does_competition_exist()
 
-    race_types = [*map(lambda o: o.name, race_type_collection)]
-    is_disabled = not bool([*map(lambda _: _, race_collection)])
-    drivers = [*map(lambda o: o.id, driver_collection)]
-
+ctx = RaceContext()
 
 # the race types
 select_race_type = html.Div([
     dbc.Label("Тип гонки", html_for="race_type"),
-    dbc.Select(race_types, race_types[0], id="race_type"),
+    dbc.Select(ctx.race_types, ctx.race_types[0], id="race_type"),
 ], style={"margin-bottom": "20px"})
 
 
 # the first driver
 select_driver_1 = html.Div([
     dbc.Label("Гонщик 1", html_for="sponsor"),
-    dbc.Select(drivers, drivers[0], id="driver_1"),
+    dbc.Select(ctx.drivers, ctx.drivers[0], id="driver_1"),
 ], style={"margin-bottom": "20px"})
 
 # the second driver
 select_driver_2 = html.Div([
     dbc.Label("Гонщик 2", html_for="sponsor"),
-    dbc.Select(drivers, drivers[0], id="driver_2", disabled=True),
+    dbc.Select(ctx.drivers, ctx.drivers[0], id="driver_2", disabled=True),
 ], style={"margin-bottom": "20px"})
 
 
@@ -65,27 +69,27 @@ form = dbc.Form([
 
 run_button = html.Div([
     dbc.Button(
-        "Запуск",
-        id="run_race",
+        "Старт",
+        id="start_race",
         # outline=True,
         size="md",
         color="primary",
         className="me-1",
         n_clicks=0,
-        disabled=is_disabled,
+        disabled=ctx.is_disabled,
     ),
 ], className="d-grid gap-2")
 
 stop_button = html.Div([
     dbc.Button(
-        "Остановка",
-        id="stop_race",
+        "Финиш",
+        id="finish_race",
         # outline=True,
         size="md",
         color="secondary",
         className="me-1",
         n_clicks=0,
-        disabled=is_disabled,
+        disabled=ctx.is_disabled,
     ),
 ], className="d-grid gap-2")
 
@@ -95,11 +99,12 @@ race_form = dbc.Card([
     dbc.CardBody([form]),
     dbc.CardFooter(
         dbc.Row([
-            dbc.Col(stop_button),
             dbc.Col(run_button),
+            dbc.Col(stop_button),
         ])
     ),
-    html.Div(id="race_form_dummy_out", style={"visibility": "hidden"})
+    html.Div(id="race_form_dummy_out-1", style={"visibility": "hidden"}),
+    html.Div(id="race_form_dummy_out-2", style={"visibility": "hidden"}),
 ])
 
 
@@ -108,34 +113,59 @@ race_form = dbc.Card([
     [Input("select_pair_race", "value")],
 )
 def on_checkbox(values):
-    if len(values):
-        return False
-    return True
-
+    return not len(values)
 
 @app.callback(
-    Output("run_race", "disabled"),
-    [Input("add_competition", "n_clicks")],
+    Output("start_race", "disabled"),
+    [Input("start_race", "n_clicks")],
 )
 def disable_btn(*value):
-    if value[0]:
-        return False
-    return True
-
+    return ctx.is_disabled
 
 @app.callback(
-    Output("race_form_dummy_out", "children"),
-    [Input("run_race", "n_clicks")],
+    Output("finish_race", "disabled"),
+    [Input("finish_race", "n_clicks")],
+)
+def disable_btn(*value):
+    return ctx.is_disabled
+
+@app.callback(
+    Output("race_form_dummy_out-1", "children"),
+    [Input("start_race", "n_clicks")],
     State("race_type", "value"),
     State("driver_1", "value"),
     State("driver_2", "value"),
     State("select_pair_race", "value"),
 )
-def cb_render(*values):
+def on_click_star_race(*values):
     data = [v for v in values if v]
     if isinstance(data[0], int):
         data.append([0])
         data = data[1:6]
         data[-1] = bool(data[-1][0])
-        print(">>>> ", data)
+        drivers = data[1:3] if data[-1] else data[1:2]
+        print("[INFO] trying to start a race with these params: ", {"race_type": data[0], "drivers": drivers})
+        race_type = "_".join(data[0].split(" "))
+        res = ctx.http_client.start_race(race_type=data[0], drivers=drivers)
+        data = res.ok
+        print(f"[{data and 'OK' or 'ERROR'}] response has been received from server: ", res)
+        if data:
+            ctx.is_finished_race = True
+            self.notifications.append(res.ok)
     return ""
+
+
+@app.callback(
+    Output("race_form_dummy_out-2", "children"),
+    [Input("finish_race", "n_clicks")],
+)
+def on_click_finish_race(n_click):
+    if n_click:
+        print("[INFO] trying to finish a race")
+        res = ctx.http_client.stop_race()
+        print(f"[{res.ok and 'OK' or 'ERROR'}] response has been received from server: ", res)
+        if res.ok:
+            db.save_race_results(res)
+            ctx.is_finished_race = False
+    return ""
+

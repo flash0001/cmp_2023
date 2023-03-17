@@ -1,7 +1,8 @@
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, dcc, html, dash_table
+from dash import Input, Output, State, html, dash_table
 from services import application as app
 from collections import OrderedDict
+from components import modal_window
 
 
 table2 = dash_table.DataTable(
@@ -70,7 +71,7 @@ statistic_page = html.Div([
     html.Div([
         table2
     ]),
-    html.Div(id="table_out")
+    modal_window,
 ])
 
 
@@ -90,3 +91,15 @@ def display_click_data(active_cell, table_data):
     else:
         out = ''
     return out
+
+
+@app.callback(
+    Output("race_results_window", "is_open"),
+    [Input("table", "active_cell")],
+    State("race_results_window", "is_open"),
+)
+def open_modal(*values):
+    print(">>>> ", values)
+    data, is_open = values
+    return False if data is None else True
+    #return values[1] if values[0] else not values[1]
