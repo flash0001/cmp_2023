@@ -13,12 +13,13 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from sqlalchemy import Integer, String, ForeignKey, text
 #from .result import Result
+from pathlib import Path
 
 
 __dir__ = os.path.abspath(os.path.dirname(__file__))
 
-DATABASE = f"{__dir__}/../../database.db"
-SQL = f"{__dir__}/database.sql"
+DATABASE = ((Path(__dir__) / "..") / "..") / "database.db"
+SQL = Path(__dir__) / "database.sql"
 
 
 database_exists = os.path.isfile(DATABASE)
