@@ -161,7 +161,7 @@ competition_form = dbc.Card([
 )
 def on_save_competition(*values):
     data = [v for v in values if v]
-    if isinstance(data[0], int):
+    if len(data) and isinstance(data[0], int):
         comp = ctx.current_competition
         if comp is not None:
             print("[ERROR] competition has been already set")
