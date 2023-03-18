@@ -12,6 +12,7 @@ class DataTableModel(list):
     def __init__(self):
         pass
 
+
 class GraphBuilder:
     def __init__(self, data_table):
         self.__data_table = data_table
@@ -21,10 +22,10 @@ class GraphBuilder:
             data = self.__data_table[row]
         except IndexError:
             return None
-        
 
-#df = px.data.iris()  # iris is a pandas DataFrame
-#fig = px.scatter(df, x="sepal_width", y="sepal_length")
+
+# df = px.data.iris()  # iris is a pandas DataFrame
+# fig = px.scatter(df, x="sepal_width", y="sepal_length")
 fig = go.Figure(data=[go.Scatter(x=[1, 2, 3], y=[4, 1, 2])])
 
 graph = dcc.Graph(figure=fig)
@@ -32,6 +33,7 @@ graph = dcc.Graph(figure=fig)
 mw_body = dbc.ModalBody(
     [
         html.Div(id="table_out"),
+        graph,
         graph,
     ]
 )

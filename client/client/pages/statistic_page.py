@@ -1,24 +1,19 @@
 import dash_bootstrap_components as dbc
 from dash import Input, Output, State, html, dash_table
-from services import application as app
+from services import application as app, database as db, shared_context as ctx
 from collections import OrderedDict
 from components import modal_window
-
 
 table2 = dash_table.DataTable(
     id="table",
     columns=[
-        {"name": "Тип заезда", "id": "type_race"},
-        {"name": "Номер(а) Пилота(ов)", "id": "driver"},
+        {"name": "Тип заезда", "id": "race_type"},
+        {"name": "Номер(а) Пилота(ов)", "id": "drivers"},
         {"name": "Время начала заезда", "id": "started_at"},
         {"name": "Время окончания заезда", "id": "finished_at"},
         {"name": "Данные телеметрии", "id": "telemetry"},
     ],
-    data=[{
-        "type_race": i * 10, "driver": i * 100,
-        "started_at": i * -1, "finished_at": i * -100,
-        "telemetry": ",".join([*map(lambda x: str(x), range(60))])[:60] + "...",
-    } for i in range(10)],
+    data=ctx.races_table_data,
     merge_duplicate_headers=True,
 
 
@@ -82,8 +77,6 @@ statistic_page = html.Div([
 )
 def display_click_data(active_cell, table_data):
     if active_cell is not None:
-        # print(">>>> HELLO, ", active_cell)
-        # cell = json.dumps(active_cell, indent=2)
         row = active_cell['row']
         col = active_cell['column_id']
         value = table_data[row][col]
@@ -99,7 +92,6 @@ def display_click_data(active_cell, table_data):
     State("race_results_window", "is_open"),
 )
 def open_modal(*values):
-    print(">>>> ", values)
     data, is_open = values
     return False if data is None else True
-    #return values[1] if values[0] else not values[1]
+    # return values[1] if values[0] else not values[1]

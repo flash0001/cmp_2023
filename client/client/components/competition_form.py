@@ -1,9 +1,10 @@
 import requests
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State, html
-from services import application as app
+from dash import Input, Output, State, html, dcc
+from services import application as app, arc
 from services import database as db, HTTPClient
 from time import sleep
+
 
 class RaceContext:
     def __init__(self):
@@ -19,6 +20,9 @@ class RaceContext:
         self.race_types = db.get_race_type_names()
         self.drivers = db.get_drivers_id()
 
+    def update(self):
+        self.__init__()
+
     @property
     def is_comp_form_disabled(self) -> bool:
         return db.does_competition_exist()
@@ -29,19 +33,23 @@ class RaceContext:
 
     @property
     def name(self):
-        return self.competition.name if self.competition else ""
+        return self.competition["name"] if self.competition else ""
 
     @property
     def sponsor(self):
-        return self.competition.sponsor if self.competition else ""
+        return self.competition["sponsor"] if self.competition else ""
 
     @property
     def date(self):
-        return self.competition.date if self.competition else ""
+        return self.competition["date"] if self.competition else ""
 
     @property
     def location(self):
-        return self.competition.location if self.competition else ""
+        return self.competition["location"] if self.competition else ""
+
+    @property
+    def current_competition(self):
+        return db.get_current_competition()
 
 
 ctx = RaceContext()
@@ -49,7 +57,7 @@ ctx = RaceContext()
 competition_name_input = html.Div([
     dbc.Label("Наименование соревнования", html_for="competition_name"),
     dbc.Input(
-        id="com_name",
+        id="comp_name",
         placeholder="",
         type="text",
         value=ctx.name
@@ -96,7 +104,7 @@ fields = [
 # the form
 form = dbc.Form([
     dbc.Row([
-        dbc.Col(fields),
+        dbc.Col(fields, id="field"),
     ], style={"padding-left": "25px", "padding-right": "25px"}),
 ])
 
@@ -110,7 +118,7 @@ create_comp_btn = html.Div([
         color="primary",
         className="me-1",
         n_clicks=0,
-        disabled=ctx.is_comp_form_disabled,
+        disabled=False,
     ),
 ], className="d-grid gap-2")
 
@@ -124,7 +132,7 @@ make_archive_btn = html.Div([
         color="secondary",
         className="me-1",
         n_clicks=0,
-        disabled=not ctx.is_comp_form_disabled,
+        disabled=False,
     ),
 ], className="d-grid gap-2")
 
@@ -138,14 +146,15 @@ competition_form = dbc.Card([
             dbc.Col(make_archive_btn),
         ]),
     ),
-    html.Div(id="com_form_dummy_out", style={"visibility": "hidden"})
+    html.Div(id="com_form_dummy_out-1", style={"visibility": "hidden"}),
+    html.Div(id="com_form_dummy_out-2", style={"visibility": "hidden"})
 ])
 
 
 @app.callback(
-    Output("com_form_dummy_out", "children"),
+    Output("com_form_dummy_out-1", "children"),
     [Input("add_competition", "n_clicks")],
-    State("com_name", "value"),
+    State("comp_name", "value"),
     State("sponsor_name", "value"),
     State("date", "value"),
     State("location", "value"),
@@ -153,7 +162,11 @@ competition_form = dbc.Card([
 def on_save_competition(*values):
     data = [v for v in values if v]
     if isinstance(data[0], int):
-        print("create a new competition from ", data)
+        comp = ctx.current_competition
+        if comp is not None:
+            print("[ERROR] competition has been already set")
+            return ""
+        print("[INFO] create a new competition from ", data)
         try:
             name, sponsor, date, location = data[1:]
             db.save_competition(
@@ -164,13 +177,38 @@ def on_save_competition(*values):
             )
         except Exception as err:
             print(err)
-    return ""
+    sleep(0.2)
+    return dcc.Location(pathname="/", id="__")
+
 
 @app.callback(
-    Output("add_competition", "disabled"),
-    [Input("add_competition", "n_clicks")],
+    Output("com_form_dummy_out-2", "children"),
+    [Input("make_archive", "n_clicks")],
 )
-def disable_btn(n_clicks):
-    print(">>>> ", ctx.is_comp_form_disabled)
-    sleep(0.8)
-    return ctx.is_comp_form_disabled
+def on_make_archive(n_click):
+    if n_click:
+        comp = ctx.current_competition
+        if comp is None:
+            print("[ERROR] competition is not set")
+            return ""
+        data = db.make_archive()
+        path = arc.make(data)
+        print(f"[OK] archive has is created: {path}")
+    return "_"
+
+
+@app.callback(
+    [
+        Output("comp_name", "value"),
+        Output("sponsor_name", "value"),
+        Output("date", "value"),
+        Output("location", "value"),
+    ],
+    [Input("make_archive", "n_clicks")],
+)
+def on_make_archive(n_click):
+    if not db.does_competition_exist() or bool(n_click):
+        return "", "", "", ""
+    else:
+        ctx.update()
+        return ctx.name, ctx.sponsor, ctx.date, ctx.location

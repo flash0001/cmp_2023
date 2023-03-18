@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS race (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   competition_id   INTEGER NOT NULL,
   race_type        TEXT    NOT NULL,
-  start_at         INTEGER NOT NULL,
+  started_at         INTEGER NOT NULL,
   finish_at        INTEGER DEFAULT NULL,
   data             TEXT,
 

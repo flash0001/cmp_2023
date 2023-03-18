@@ -3,7 +3,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 from pages import new_race_page, statistic_page, competition_page, new_competition_page
-from services import config, application as app
+from services import config, application as app, shared_context as ctx
 
 
 # the style arguments for the sidebar. We use position:fixed and a fixed width
@@ -78,11 +78,24 @@ def render_page_content(pathname):
     )
 
 
-#@app.route("/arc")
-#def get_archive():
-#    data = "test"
-#    return data
+@app.callback(
+    Output("table", "data"),
+    [Input("url", "pathname")]
+)
+def update_table(pathname):
+    data = ctx.races_table_data
+    return data
+
+
+@app.server.route("/archive", methods=["GET"])
+def get_archive():
+    data = "test"
+    return data
 
 
 if __name__ == "__main__":
-    app.run_server(port=config.server.port, threaded=True, debug=config.server.debug)
+    app.run_server(
+        port=config.server.port,
+        threaded=True,
+        debug=config.server.debug
+    )

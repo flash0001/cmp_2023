@@ -124,25 +124,3 @@ def on_checkbox(values):
     if len(values):
         return False
     return True
-
-
-@app.callback(
-    Output("container-button-basic-2", "children"),
-    Input("submit_btn", "n_clicks"),
-    State("sponsor", "value"),
-    State("race_type", "value"),
-    State("driver_1", "value"),
-    State("driver_2", "value"),
-    State("select_pair_race", "value"),
-)
-def cb_render(*values):
-    data = [v for v in values if v]
-    if isinstance(data[0], int):
-        data.append([0])
-        data = data[1:6]
-        data[-1] = bool(data[-1][0])
-        print(">>>> ", data)
-    return ""
-
-# http://dash-bootstrap-components.opensource.faculty.ai/docs/themes/explorer/
-# http://dash-bootstrap-components.opensource.faculty.ai/docs/components/layout/

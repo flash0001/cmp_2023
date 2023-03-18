@@ -5,6 +5,7 @@ from dash import Input, Output, State, html
 from services import application as app
 from services import database as db, HTTPClient
 
+
 class RaceContext:
     def __init__(self):
         self.http_client = HTTPClient()
@@ -17,6 +18,11 @@ class RaceContext:
         self.race_types = db.get_race_type_names()
         self.drivers = db.get_drivers_id()
         self.is_disabled = not db.does_competition_exist()
+
+    @property
+    def current_competition(self):
+        return db.get_current_competition()
+
 
 ctx = RaceContext()
 
@@ -76,7 +82,7 @@ run_button = html.Div([
         color="primary",
         className="me-1",
         n_clicks=0,
-        disabled=ctx.is_disabled,
+        disabled=False,
     ),
 ], className="d-grid gap-2")
 
@@ -89,7 +95,7 @@ stop_button = html.Div([
         color="secondary",
         className="me-1",
         n_clicks=0,
-        disabled=ctx.is_disabled,
+        disabled=False,
     ),
 ], className="d-grid gap-2")
 
@@ -115,19 +121,6 @@ race_form = dbc.Card([
 def on_checkbox(values):
     return not len(values)
 
-@app.callback(
-    Output("start_race", "disabled"),
-    [Input("start_race", "n_clicks")],
-)
-def disable_btn(*value):
-    return ctx.is_disabled
-
-@app.callback(
-    Output("finish_race", "disabled"),
-    [Input("finish_race", "n_clicks")],
-)
-def disable_btn(*value):
-    return ctx.is_disabled
 
 @app.callback(
     Output("race_form_dummy_out-1", "children"),
@@ -140,18 +133,26 @@ def disable_btn(*value):
 def on_click_star_race(*values):
     data = [v for v in values if v]
     if isinstance(data[0], int):
+        comp = ctx.current_competition
+        if comp is None:
+            print("[ERROR] competition is not set")
+            return ""
         data.append([0])
-        data = data[1:6]
+        data = data[1:5]
         data[-1] = bool(data[-1][0])
         drivers = data[1:3] if data[-1] else data[1:2]
-        print("[INFO] trying to start a race with these params: ", {"race_type": data[0], "drivers": drivers})
+        if len(drivers) == 2 and drivers[0] == drivers[1]:
+            print(f"[ERROR] the same driver: {drivers[0]} == {drivers[1]}")
+            return ""
+        print("[INFO] trying to start a race with these params: ",
+              {"race_type": data[0], "drivers": drivers})
         race_type = "_".join(data[0].split(" "))
         res = ctx.http_client.start_race(race_type=race_type, drivers=drivers)
         data = res.ok
-        print(f"[{data and 'OK' or 'ERROR'}] response has been received from server: ", res)
+        print(
+            f"[{data and 'OK' or 'ERROR'}] response has been received from server: ", res)
         if data:
             ctx.is_finished_race = True
-            #.notifications.append(res.ok)
     return ""
 
 
@@ -160,12 +161,16 @@ def on_click_star_race(*values):
     [Input("finish_race", "n_clicks")],
 )
 def on_click_finish_race(n_click):
+    comp = ctx.current_competition
     if n_click:
+        if comp is None:
+            print("[ERROR] competition is not set")
+            return ""
         print("[INFO] trying to finish a race")
         res = ctx.http_client.stop_race()
-        print(f"[{res.ok and 'OK' or 'ERROR'}] response has been received from server: ", res)
+        print(
+            f"[{res.ok and 'OK' or 'ERROR'}] response has been received from server: ", res)
         if res.ok:
-            db.save_race_results(res)
+            db.save_race_results(res.ok)
             ctx.is_finished_race = False
-    return ""
-
+    return "_"
