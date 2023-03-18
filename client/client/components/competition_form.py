@@ -111,7 +111,7 @@ form = dbc.Form([
 
 create_comp_btn = html.Div([
     dbc.Button(
-        "Запуск",
+        "Создать",
         id="add_competition",
         # outline=True,
         size="md",
