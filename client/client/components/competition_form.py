@@ -193,7 +193,7 @@ def on_make_archive(n_click):
             return ""
         data = db.make_archive()
         path = arc.make(data)
-        print(f"[OK] archive has is created: {path}")
+        print(f"[OK] archive is created: {path}")
     return "_"
 
 
