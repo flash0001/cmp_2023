@@ -23,6 +23,10 @@ class Timer:
 
     @property
     def value(self):
+        return self.duration
+
+    @property
+    def duration(self):
         start = datetime.now().astimezone()
         stop = start
         if self._started_at is not None:

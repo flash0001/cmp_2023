@@ -1,10 +1,11 @@
-from subprocess import Popen, PIPE
-import signal
-import time
-import sys
-import os
 import json
+import os
+import signal
+from subprocess import Popen, PIPE
+import sys
+import time
 from uuid import uuid4
+from .timer import Timer
 
 
 class Pout(dict):
@@ -30,38 +31,59 @@ class Pout(dict):
     def __repr__(self) -> str:
         return str(self)
 
+
 class ProcessWrapper:
 
     def __init__(self, cmd, race_type, driver_id, data_dir):
+        self.__timer = Timer()
         self.uuid = uuid4()
         self.file_path = f"{data_dir}/{self.uuid}"
         driver_id = str(driver_id)
         self.driver_id = driver_id
         self.race_type = race_type
-        self.proc = Popen([sys.executable, cmd, race_type, driver_id, self.file_path], stdout=PIPE, stderr=PIPE)
+        self.__timer.start()
+        self.proc = Popen([
+            sys.executable,
+            cmd,
+            race_type,
+            driver_id,
+            self.file_path
+        ],
+            stdout=PIPE,
+            stderr=PIPE
+        )
 
     def terminate(self):
         self.proc.terminate()
+        self.__timer.stop()
 
     def send_signal(self, sig):
         self.proc.send_signal(sig)
+        self.__timer.stop()
 
     def kill(self):
         self.proc.kill()
+        self.__timer.stop()
 
     def communicate(self):
         data = {
+            "started_at": str(self.__timer.started_at),
+            "finished_at": str(self.__timer.stopped_at),
+            "duration": str(self.__timer.duration.seconds),
             "race_type": self.race_type,
             "driver_id": self.driver_id,
             "telemetry": []
         }
-        
+
         with open(self.file_path) as fp:
-            data["telemetry"] = fp.read()[:-1]
+            raw = fp.read()[:-1]
+            telemetry = [*map(lambda x: int(x), raw.split(","))]
+            data["telemetry"] = telemetry
         return json.dumps(data), ""
 
     def __del__(self):
         os.remove(self.file_path)
+
 
 class ProcPool:
 

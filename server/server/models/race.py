@@ -8,7 +8,7 @@ class RaceType(str, Enum):
     Top16 = "top_16"
     Top8 = "top_8"
     Semifinal = "semifinal"
-    BattleFor3rdPlace = "battle for 3rd place"
+    BattleFor3rdPlace = "battle_for_3rd_place"
     Final = "final"
 
 

@@ -55,7 +55,7 @@ def receive_race_params():
         clear_data_dir()
         try:
             data = request.json
-            print(data)
+            print("server has received data from client: ", data)
             race = Race(
                 race_type=data.get("race_type"),
                 drivers=data.get("drivers")
