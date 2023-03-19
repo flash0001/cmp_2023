@@ -1,0 +1,8 @@
+dash
+dash-bootstrap-components
+sqlalchemy
+requests
+pydantic
+dash_echarts
+plotly
+pandas
